@@ -43,11 +43,14 @@ for record in list(results):
 @app.route("/")
 def welcome():
     return (
+		f"Available route address with base URL http://127.0.0.1:5000 <br/>"
+		f"--------------------------------------------------------------------------<br/>"
         f"/api/v1.0/precipitation<br/>"
         f"/api/v1.0/stations<br/>"
         f"/api/v1.0/tobs<br/>"
         f"/api/v1.0/YYYY-MM-DD<br/>"
-		f"/api/v1.0/YYYY-MM-DD/YYYY-MM-DD"
+		f"/api/v1.0/YYYY-MM-DD/YYYY-MM-DD<br/>"
+		f"---------------------------------------------------------------------------"
     )
 
 @app.route('/api/v1.0/precipitation')
@@ -96,6 +99,32 @@ def tobs():
         # temp_dict['temprature']=row.tobs
         temp_obs.append(temp_dict)
     return jsonify(temp_obs)
+
+@app.route('/api/v1.0/<string:start>')
+def date1(start):
+	session = Session(engine)
+	min_maxlist1=[]
+	results1 = session.query(func.min(Measurement.tobs).label("min"), func.avg(Measurement.tobs).label("average"),func.max(Measurement.tobs).label("max")).filter(func.strftime("%Y-%m-%d",Measurement.date) >= start).all()
+	for row in results1:
+		minmax_dict1={}
+		minmax_dict1['Minimum Temprature']=row.min
+		minmax_dict1['Average Temprature']=row.average
+		minmax_dict1['Maximum Temprature']=row.max
+		min_maxlist1.append(minmax_dict1)
+	return jsonify(min_maxlist1)
 	
+@app.route('/api/v1.0/<string:start>/<string:end>')
+def date(start,end):
+	session = Session(engine)
+	min_maxlist=[]
+	results=session.query(func.min(Measurement.tobs).label("min"), func.avg(Measurement.tobs).label("average"), func.max(Measurement.tobs).label("max")).filter(func.strftime("%Y-%m-%d",Measurement.date) >= start).filter(func.strftime("%Y-%m-%d",Measurement.date) <= end).all()
+	for row in results:
+		minmax_dict={}
+		minmax_dict['Minimum Temprature']=row.min
+		minmax_dict['Average Temprature']=row.average
+		minmax_dict['Maximum Temprature']=row.max
+		min_maxlist.append(minmax_dict)
+	return jsonify(min_maxlist)
+
 if __name__ == '__main__':
     app.run(debug=True)
